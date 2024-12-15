@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  
+  <!-- Navigation Links -->
+  <nav>
+    <a href="index.html">User Page</a> | 
+    <a href="admin.html">Admin Dashboard</a>
+  </nav>
+  
+  <h2>Upload Files for Lucky Draw</h2>
+  <form id="uploadForm">
+    <label for="drawName">Draw Name:</label>
+    <input type="text" id="drawName" name="drawName" required>
+    <br><br>
+    <label for="file">Choose File:</label>
+    <input type="file" id="file" name="file" required>
+    <br><br>
+    <button type="submit">Upload</button>
+  </form>
+  <p id="uploadMessage"></p>
+  
+  <h2>Set Lucky Draw Date and Time</h2>
+  <form id="scheduleForm">
+    <label for="drawNameSchedule">Draw Name:</label>
+    <input type="text" id="drawNameSchedule" name="drawNameSchedule" required>
+    <br><br>
+    <label for="drawDate">Draw Date:</label>
+    <input type="date" id="drawDate" name="drawDate" required>
+    <br><br>
+    <label for="drawTime">Draw Time:</label>
+    <input type="time" id="drawTime" name="drawTime" required>
+    <br><br>
+    <button type="submit">Set Date and Time</button>
+  </form>
+  <p id="scheduleMessage"></p>
+
+  <h2>Past Lucky Draws</h2>
+  <div id="pastDraws"></div>
+
+  <script>
+    const apiUrl = "YOUR_APPS_SCRIPT_URL";
+
+    // Upload File to Google Drive
+    document.getElementById("uploadForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const drawName = document.getElementById("drawName").value;
+      const file = document.getElementById("file").files[0];
+
+      if (!file) {
+        alert("Please select a file!");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("drawName", drawName);
+      formData.append("file", file);
+
+      try {
+        const response = await fetch(`${apiUrl}?action=uploadFile`, {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        document.getElementById("uploadMessage").innerText = result.message || "File uploaded successfully!";
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        document.getElementById("uploadMessage").innerText = "Failed to upload file.";
+      }
+    });
+
+    // Set Lucky Draw Date and Time
+    document.getElementById("scheduleForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const drawName = document.getElementById("drawNameSchedule").value;
+      const drawDate = document.getElementById("drawDate").value;
+      const drawTime = document.getElementById("drawTime").value;
+
+      try {
+        const response = await fetch(`${apiUrl}?action=setLuckyDrawTime`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ drawName, drawDate, drawTime }),
+        });
+        const result = await response.json();
+        document.getElementById("scheduleMessage").innerText = result.message || "Lucky draw time set successfully!";
+      } catch (error) {
+        console.error("Error setting lucky draw time:", error);
+        document.getElementById("scheduleMessage").innerText = "Failed to set lucky draw time.";
+      }
+    });
+
+    // Fetch Past Draws
+    async function fetchPastDraws() {
+      try {
+        const response = await fetch(`${apiUrl}?action=getPastDraws`);
+        const pastDraws = await response.json();
+        const container = document.getElementById("pastDraws");
+        if (pastDraws.length > 0) {
+          const list = pastDraws.map(
+            draw => `
+              <div>
+                <h3>${draw.drawName}</h3>
+                <p>Date: ${draw.date} | Time: ${draw.time}</p>
+                <p>Winner: ${draw.winnerName} (${draw.winnerUdyam})</p>
+              </div>
+            `
+          );
+          container.innerHTML = list.join("");
+        } else {
+          container.innerHTML = "<p>No past draws found.</p>";
+        }
+      } catch (error) {
+        console.error("Error fetching past draws:", error);
+        document.getElementById("pastDraws").innerHTML = "<p>Failed to load past draws.</p>";
+      }
+    }
+
+    fetchPastDraws();
+  </script>
+</body>
+</html>
