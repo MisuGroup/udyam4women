@@ -10,36 +10,54 @@
   <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
   <button onclick="searchUdyam()">Search</button>
   <div id="winnerList"></div>
+<script>
+  const apiUrl = "https://script.google.com/macros/s/AKfycbzBGYLGHDWKhSoJwWdoMuavXhycAitTfkKMT943GcX-eyzSzFoRBhuzBERpRiB-4rUnxQ/exec";
 
-  <script>
-    const apiUrl = "YOUR_APPS_SCRIPT_URL";
+  // Timer function
+  function startTimer(endTime) {
+    const timer = document.getElementById("timer");
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = endTime - now;
+      if (distance <= 0) {
+        clearInterval(interval);
+        timer.innerHTML = "Draw Time!";
+        return;
+      }
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      timer.innerHTML = `Time left: ${minutes}m ${seconds}s`;
+    }, 1000);
+  }
 
-    // Timer
-    function startTimer(endTime) {
-      const timer = document.getElementById("timer");
-      const interval = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = endTime - now;
-        if (distance <= 0) {
-          clearInterval(interval);
-          timer.innerHTML = "Draw Time!";
-          return;
-        }
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        timer.innerHTML = `Time left: ${minutes}m ${seconds}s`;
-      }, 1000);
+  // Fetch winners
+  async function fetchWinners() {
+    try {
+      const response = await fetch(`${apiUrl}?action=getWinners`);
+      const winners = await response.json();
+      const container = document.getElementById("winnerList");
+      if (winners.length > 0) {
+        const list = winners.map(
+          winner => `
+            <div>
+              <p>${winner.drawName}: ${winner.winnerName} (${winner.winnerUdyam})</p>
+            </div>
+          `
+        );
+        container.innerHTML = list.join("");
+      } else {
+        container.innerHTML = "<p>No winners yet.</p>";
+      }
+    } catch (error) {
+      console.error("Error fetching winners:", error);
+      document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
     }
+  }
 
-    // Search Udyam Number
-    function searchUdyam() {
-      const udyam = document.getElementById("udyamSearch").value;
-      fetch(`${apiUrl}?udyamNumber=${udyam}`)
-        .then(response => response.json())
-        .then(data => {
-          alert(data.match ? `Found: ${JSON.stringify(data.record)}` : "Not Found");
-        });
-    }
-  </script>
+  // Call fetchWinners on page load
+  fetchWinners();
+</script>
+
+  
 </body>
 </html>
