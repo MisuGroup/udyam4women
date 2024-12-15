@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lucky Draw</title>
+</head>
+<body>
+  <h1>Lucky Draw</h1>
+  <div id="timer"></div>
+  <div id="randomizer">Spinning...</div>
+  <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
+  <button onclick="searchUdyam()">Search</button>
+  <div id="winnerList"></div>
+
+  <script>
+    const apiUrl = "YOUR_APPS_SCRIPT_URL";
+
+    // Timer
+    function startTimer(endTime) {
+      const timer = document.getElementById("timer");
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = endTime - now;
+        if (distance <= 0) {
+          clearInterval(interval);
+          timer.innerHTML = "Draw Time!";
+          return;
+        }
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        timer.innerHTML = `Time left: ${minutes}m ${seconds}s`;
+      }, 1000);
+    }
+
+    // Search Udyam Number
+    function searchUdyam() {
+      const udyam = document.getElementById("udyamSearch").value;
+      fetch(`${apiUrl}?udyamNumber=${udyam}`)
+        .then(response => response.json())
+        .then(data => {
+          alert(data.match ? `Found: ${JSON.stringify(data.record)}` : "Not Found");
+        });
+    }
+  </script>
+</body>
+</html>
