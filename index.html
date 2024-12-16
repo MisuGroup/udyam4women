@@ -2,16 +2,44 @@
 <html>
 <head>
   <title>Lucky Draw</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    #randomizer {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+    .winner {
+      font-weight: bold;
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
   <h1>Lucky Draw</h1>
-  <div id="timer"></div>
-  <div id="randomizer">Spinning...</div>
+  
+  <!-- Timer Section -->
+  <h2>Time Remaining</h2>
+  <div id="timer">Loading...</div>
+
+  <!-- Randomizer Section -->
+  <h2>Spin the Wheel</h2>
+  <div id="randomizer">Click "Search" to check your Udyam number.</div>
   <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
   <button onclick="searchUdyam()">Search</button>
-  <div id="winnerList"></div>
+
+  <!-- Winner List -->
+  <h2>Winners</h2>
+  <div id="winnerList">Loading...</div>
+
 <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbxkl3Vv5jLiIfPoei7irMVRg3WwS_Sg0ePV0xtPeEd0oSz4Xm3z63Q802ovjeZOLQGwkg/exec";
+  const apiUrl = "https://script.google.com/macros/s/AKfycbzUm8hJ2QR3xE5U4OhiDoHglYMc6hlODX32Pjre8XbWq9-GZSVmn1DBhinJEwhR0CRz8Q/exec";
 
   // Timer function
   function startTimer(endTime) {
@@ -21,32 +49,75 @@
       const distance = endTime - now;
       if (distance <= 0) {
         clearInterval(interval);
-        timer.innerHTML = "Draw Time!";
+        timer.innerHTML = "The draw is happening now!";
         return;
       }
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      timer.innerHTML = `Time left: ${minutes}m ${seconds}s`;
+      timer.innerHTML = `Time left: ${hours}h ${minutes}m ${seconds}s`;
     }, 1000);
   }
 
-  // Fetch winners
+  // Fetch lucky draw data and start timer
+  async function fetchLuckyDrawData() {
+    try {
+      const response = await fetch(`${apiUrl}?action=getLuckyDrawData`);
+      const result = await response.json();
+      if (result.status === "success" && result.data.length > 0) {
+        const draw = result.data[0]; // Assuming the first draw for now
+        const drawDateTime = new Date(`${draw.drawDate} ${draw.drawTime}`);
+        startTimer(drawDateTime.getTime());
+      } else {
+        document.getElementById("timer").innerText = "No upcoming draws.";
+      }
+    } catch (error) {
+      console.error("Error fetching lucky draw data:", error);
+      document.getElementById("timer").innerText = "Failed to load draw details.";
+    }
+  }
+
+  // Search Udyam Number
+  async function searchUdyam() {
+    const udyamNumber = document.getElementById("udyamSearch").value.trim();
+    if (!udyamNumber) {
+      alert("Please enter a valid Udyam number.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiUrl}?action=getUdyamSearch&udyamNumber=${encodeURIComponent(udyamNumber)}`);
+      const result = await response.json();
+
+      if (result.status === "success") {
+        document.getElementById("randomizer").innerHTML = `<p class="winner">Congratulations! Udyam ${udyamNumber} is eligible for the draw.</p>`;
+      } else {
+        document.getElementById("randomizer").innerHTML = `<p class="error">${result.message}</p>`;
+      }
+    } catch (error) {
+      console.error("Error searching Udyam number:", error);
+      document.getElementById("randomizer").innerHTML = `<p class="error">Failed to search for Udyam number.</p>`;
+    }
+  }
+
+  // Fetch Winners
   async function fetchWinners() {
     try {
-      const response = await fetch(`${apiUrl}?action=getWinners`);
-      const winners = await response.json();
-      const container = document.getElementById("winnerList");
-      if (winners.length > 0) {
-        const list = winners.map(
+      const response = await fetch(`${apiUrl}?action=getPastResults`);
+      const result = await response.json();
+
+      if (result.status === "success" && result.data.length > 0) {
+        const winners = result.data.map(
           winner => `
             <div>
-              <p>${winner.drawName}: ${winner.winnerName} (${winner.winnerUdyam})</p>
+              <p><strong>Draw:</strong> ${winner["draw number"]}</p>
+              <p><strong>Winner:</strong> ${winner["Account holder name"]} (${winner["udyam number"]})</p>
             </div>
           `
         );
-        container.innerHTML = list.join("");
+        document.getElementById("winnerList").innerHTML = winners.join("");
       } else {
-        container.innerHTML = "<p>No winners yet.</p>";
+        document.getElementById("winnerList").innerHTML = "<p>No winners yet.</p>";
       }
     } catch (error) {
       console.error("Error fetching winners:", error);
@@ -54,10 +125,10 @@
     }
   }
 
-  // Call fetchWinners on page load
+  // Load Lucky Draw Data and Winners on Page Load
+  fetchLuckyDrawData();
   fetchWinners();
 </script>
 
-  
 </body>
 </html>
