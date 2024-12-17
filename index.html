@@ -64,6 +64,7 @@
     try {
       const response = await fetch(`${apiUrl}?action=getLuckyDrawData`);
       const result = await response.json();
+      alert(result.data);
       if (result.status === "success" && result.data.length > 0) {
         const draw = result.data[0]; // Assuming the first draw for now
         const drawDateTime = new Date(`${draw.drawDate} ${draw.drawTime}`);
