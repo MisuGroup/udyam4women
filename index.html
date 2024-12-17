@@ -101,7 +101,7 @@
     }
   }
 
-  // Fetch Winners - Updated with AJAX
+  // Fetch Winners - Fixed Key Access
   function fetchWinners() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${apiUrl}?action=getPastResults`, true);
@@ -110,16 +110,17 @@
         if (xhr.status === 200) {
           try {
             const response = JSON.parse(xhr.responseText);
-            
             const winnerListDiv = document.getElementById("winnerList");
 
             if (response.status === "success" && response.data.length > 0) {
               // Render the winner data
               const winners = response.data.map(winner => `
                 <div>
-                  <p><strong>Draw:</strong> ${winner["draw number"] || "N/A"}</p>
-                  <p><strong>Winner:</strong> ${winner["Account holder name"] || "N/A"} (${winner["udyam number"] || "N/A"})</p>
+                  <p><strong>Draw:</strong> ${winner["Draw Name"] || "N/A"} (${winner["Draw Date"] || "N/A"})</p>
+                  <p><strong>Winner:</strong> ${winner["Winner Name"] || "N/A"} (${winner["Winner Udyam Number"] || "N/A"})</p>
+                  <p><strong>Claim Code:</strong> ${winner["Winner Claim Code"] || "N/A"}</p>
                 </div>
+                <hr>
               `);
 
               winnerListDiv.innerHTML = winners.join("");
@@ -128,7 +129,7 @@
             }
           } catch (error) {
             console.error("Error parsing winners response:", error);
-            document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
+            winnerListDiv.innerHTML = "<p>Failed to load winners.</p>";
           }
         } else {
           console.error("Error fetching winners:", xhr.statusText);
@@ -141,6 +142,7 @@
 
   // Load Winners on Page Load
   fetchWinners();
+
 </script>
 
 </body>
