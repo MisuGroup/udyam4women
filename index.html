@@ -29,17 +29,17 @@
   <div id="timer">Loading...</div>
 
   <!-- Randomizer Section -->
-  <h2>Spin the Wheel</h2>
-  <div id="randomizer">Click "Search" to check your Udyam number.</div>
+  <h2>Search Your Udyam Number</h2>
   <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
   <button onclick="searchUdyam()">Search</button>
+  <div id="randomizer">Waiting for your input...</div>
 
   <!-- Winner List -->
   <h2>Winners</h2>
   <div id="winnerList">Loading...</div>
 
 <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbwS0PiCg6hx5iMn1NhqD1pmhd-h5IdDyQyGDPBaCIbfEVFgUvh6cc6S0M8EWZB6j1Tx-w/exec";
+  const apiUrl = "https://script.google.com/macros/s/AKfycbzTcRqSt_jlBPwuLJi78y-hJ-d9l8rtMtCr42LbtZIwlvQoL1zoNHout8272qKScMHSuQ/exec";
 
   // Fetch Lucky Draw Data - Show all records
   function fetchLuckyDrawData() {
@@ -71,7 +71,6 @@
                   drawTime.getSeconds()
                 );
 
-                // Append draw details and a placeholder for the timer
                 html += `
                   <div>
                     <h3>${drawName}</h3>
@@ -82,24 +81,21 @@
                   <hr>
                 `;
 
-                // Start a timer for each draw
                 setTimeout(() => {
                   startTimer(combinedDateTime.getTime(), `countdown-${index}`);
                 }, 0);
               });
 
-              // Add all records to the timerDiv
               timerDiv.innerHTML = html;
             } else {
               timerDiv.innerHTML = "<p>No upcoming draws.</p>";
             }
           } catch (error) {
             console.error("Error parsing lucky draw data:", error);
-            document.getElementById("timer").innerText = "Failed to load draw details.";
+            timerDiv.innerText = "Failed to load draw details.";
           }
         } else {
-          console.error("Error fetching lucky draw data:", xhr.statusText);
-          document.getElementById("timer").innerText = "Failed to load draw details.";
+          timerDiv.innerText = "Failed to load draw details.";
         }
       }
     };
@@ -127,74 +123,72 @@
     }, 1000);
   }
 
-  // Call fetchLuckyDrawData on page load
-  fetchLuckyDrawData();
-
-  // Search Udyam Number
-  async function searchUdyam() {
+  // Search for Udyam Number
+  function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
       alert("Please enter a valid Udyam number.");
       return;
     }
 
-    try {
-      const response = await fetch(`${apiUrl}?action=getUdyamSearch&udyamNumber=${encodeURIComponent(udyamNumber)}`);
-      const result = await response.json();
-
-      if (result.status === "success") {
-        document.getElementById("randomizer").innerHTML = `<p class="winner">Congratulations! Udyam ${udyamNumber} is eligible for the draw.</p>`;
-      } else {
-        document.getElementById("randomizer").innerHTML = `<p class="error">${result.message}</p>`;
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", apiUrl, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          if (response.status === "success") {
+            document.getElementById("randomizer").innerHTML = `
+              <p class="winner">Congratulations! Udyam ${udyamNumber} is eligible.</p>
+            `;
+          } else {
+            document.getElementById("randomizer").innerHTML = `
+              <p class="error">${response.message}</p>
+            `;
+          }
+        } else {
+          document.getElementById("randomizer").innerHTML = "<p class='error'>Failed to search.</p>";
+        }
       }
-    } catch (error) {
-      console.error("Error searching Udyam number:", error);
-      document.getElementById("randomizer").innerHTML = `<p class="error">Failed to search for Udyam number.</p>`;
-    }
+    };
+
+    const payload = {
+      action: "searchUdyamNumber",
+      udyamNumber: udyamNumber
+    };
+    xhr.send(JSON.stringify(payload));
   }
 
-  // Fetch Winners - Fixed Key Access
+  // Fetch Winners
   function fetchWinners() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${apiUrl}?action=getPastResults`, true);
     xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            const winnerListDiv = document.getElementById("winnerList");
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        const response = JSON.parse(xhr.responseText);
+        const winnerListDiv = document.getElementById("winnerList");
 
-            if (response.status === "success" && response.data.length > 0) {
-              // Render the winner data
-              const winners = response.data.map(winner => `
-                <div>
-                  <p><strong>Draw:</strong> ${winner["Draw Name"] || "N/A"} (${winner["Draw Date"] || "N/A"})</p>
-                  <p><strong>Winner:</strong> ${winner["Winner Name"] || "N/A"} (${winner["Winner Udyam Number"] || "N/A"})</p>
-                  <p><strong>Claim Code:</strong> ${winner["Winner Claim Code"] || "N/A"}</p>
-                </div>
-                <hr>
-              `);
-
-              winnerListDiv.innerHTML = winners.join("");
-            } else {
-              winnerListDiv.innerHTML = "<p>No winners yet.</p>";
-            }
-          } catch (error) {
-            console.error("Error parsing winners response:", error);
-            winnerListDiv.innerHTML = "<p>Failed to load winners.</p>";
-          }
+        if (response.status === "success" && response.data.length > 0) {
+          const winners = response.data.map(winner => `
+            <div>
+              <p><strong>Draw:</strong> ${winner["Draw Name"]}</p>
+              <p><strong>Winner:</strong> ${winner["Winner Name"]} (${winner["Winner Udyam Number"]})</p>
+              <p><strong>Claim Code:</strong> ${winner["Winner Claim Code"]}</p>
+            </div><hr>
+          `);
+          winnerListDiv.innerHTML = winners.join("");
         } else {
-          console.error("Error fetching winners:", xhr.statusText);
-          document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
+          winnerListDiv.innerHTML = "<p>No winners yet.</p>";
         }
       }
     };
     xhr.send();
   }
 
-  // Load Winners on Page Load
+  // Load Data on Page Load
+  fetchLuckyDrawData();
   fetchWinners();
-
 </script>
 
 </body>
