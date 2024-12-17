@@ -109,7 +109,7 @@
         if (xhr.status === 200) {
           try {
             const response = JSON.parse(xhr.responseText);
-            console.log(response);
+            
             const winnerListDiv = document.getElementById("winnerList");
 
             if (response.status === "success" && response.data.length > 0) {
