@@ -41,7 +41,7 @@
 <script>
   const apiUrl = "https://script.google.com/macros/s/AKfycbwS0PiCg6hx5iMn1NhqD1pmhd-h5IdDyQyGDPBaCIbfEVFgUvh6cc6S0M8EWZB6j1Tx-w/exec";
 
-  // Fetch Lucky Draw Data - Updated with AJAX
+  // Fetch Lucky Draw Data - Updated with AJAX and Proper Date Handling
   function fetchLuckyDrawData() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${apiUrl}?action=getLuckyDrawData`, true);
@@ -53,25 +53,40 @@
             const timerDiv = document.getElementById("timer");
 
             if (response.status === "success" && response.data.length > 0) {
-              // Assuming the first lucky draw is the most relevant
-              const draw = response.data[0];
-              
-              // Extract and display draw details
-              const drawDate = draw["Draw Date"] || "N/A";
-              const drawTime = draw["Draw Time"] || "N/A";
-              const drawName = draw["Draw Name"] || "Upcoming Lucky Draw";
+              let html = "";
 
-              // Display timer
-              const drawDateTime = new Date(`${drawDate} ${drawTime}`);
-              startTimer(drawDateTime.getTime());
+              // Loop through all lucky draw entries and display them
+              response.data.forEach((draw, index) => {
+                const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
+                const drawDate = new Date(draw["Lucky Draw Date"]);
+                const drawTime = new Date(draw["Lucky Draw Time"]);
 
-              // Display draw name
-              timerDiv.innerHTML = `
-                <p><strong>${drawName}</strong></p>
-                <p>Draw Date: ${drawDate}</p>
-                <p>Time: ${drawTime}</p>
-                <p id="countdown">Time left: Loading...</p>
-              `;
+                // Combine draw date and time into a single datetime
+                const combinedDateTime = new Date(
+                  drawDate.getFullYear(),
+                  drawDate.getMonth(),
+                  drawDate.getDate(),
+                  drawTime.getHours(),
+                  drawTime.getMinutes(),
+                  drawTime.getSeconds()
+                );
+
+                // Add draw details and a placeholder for the timer
+                html += `
+                  <div>
+                    <h3>${drawName}</h3>
+                    <p>Draw Date: ${drawDate.toDateString()}</p>
+                    <p>Draw Time: ${drawTime.toTimeString().split(" ")[0]}</p>
+                    <p id="countdown-${index}">Time left: Loading...</p>
+                  </div>
+                  <hr>
+                `;
+
+                // Start a timer for each draw
+                startTimer(combinedDateTime.getTime(), `countdown-${index}`);
+              });
+
+              timerDiv.innerHTML = html;
             } else {
               timerDiv.innerHTML = "<p>No upcoming draws.</p>";
             }
@@ -88,9 +103,9 @@
     xhr.send();
   }
 
-  // Timer function
-  function startTimer(endTime) {
-    const countdownDiv = document.getElementById("countdown");
+  // Timer function for multiple timers
+  function startTimer(endTime, elementId) {
+    const countdownDiv = document.getElementById(elementId);
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const distance = endTime - now;
