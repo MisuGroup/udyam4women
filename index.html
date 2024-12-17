@@ -39,7 +39,7 @@
   <div id="winnerList">Loading...</div>
 
 <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycbzUm8hJ2QR3xE5U4OhiDoHglYMc6hlODX32Pjre8XbWq9-GZSVmn1DBhinJEwhR0CRz8Q/exec";
+  const apiUrl = "https://script.google.com/macros/s/AKfycbwS0PiCg6hx5iMn1NhqD1pmhd-h5IdDyQyGDPBaCIbfEVFgUvh6cc6S0M8EWZB6j1Tx-w/exec";
 
   // Timer function
   function startTimer(endTime) {
@@ -100,33 +100,44 @@
     }
   }
 
-  // Fetch Winners
-  async function fetchWinners() {
-    try {
-      const response = await fetch(`${apiUrl}?action=getPastResults`);
-      const result = await response.json();
+  // Fetch Winners - Updated with AJAX
+  function fetchWinners() {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `${apiUrl}?action=getPastResults`, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            const winnerListDiv = document.getElementById("winnerList");
 
-      if (result.status === "success" && result.data.length > 0) {
-        const winners = result.data.map(
-          winner => `
-            <div>
-              <p><strong>Draw:</strong> ${winner["draw number"]}</p>
-              <p><strong>Winner:</strong> ${winner["Account holder name"]} (${winner["udyam number"]})</p>
-            </div>
-          `
-        );
-        document.getElementById("winnerList").innerHTML = winners.join("");
-      } else {
-        document.getElementById("winnerList").innerHTML = "<p>No winners yet.</p>";
+            if (response.status === "success" && response.data.length > 0) {
+              // Render the winner data
+              const winners = response.data.map(winner => `
+                <div>
+                  <p><strong>Draw:</strong> ${winner["draw number"] || "N/A"}</p>
+                  <p><strong>Winner:</strong> ${winner["Account holder name"] || "N/A"} (${winner["udyam number"] || "N/A"})</p>
+                </div>
+              `);
+
+              winnerListDiv.innerHTML = winners.join("");
+            } else {
+              winnerListDiv.innerHTML = "<p>No winners yet.</p>";
+            }
+          } catch (error) {
+            console.error("Error parsing winners response:", error);
+            document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
+          }
+        } else {
+          console.error("Error fetching winners:", xhr.statusText);
+          document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
+        }
       }
-    } catch (error) {
-      console.error("Error fetching winners:", error);
-      document.getElementById("winnerList").innerHTML = "<p>Failed to load winners.</p>";
-    }
+    };
+    xhr.send();
   }
 
-  // Load Lucky Draw Data and Winners on Page Load
-  fetchLuckyDrawData();
+  // Load Winners on Page Load
   fetchWinners();
 </script>
 
