@@ -41,42 +41,76 @@
 <script>
   const apiUrl = "https://script.google.com/macros/s/AKfycbwS0PiCg6hx5iMn1NhqD1pmhd-h5IdDyQyGDPBaCIbfEVFgUvh6cc6S0M8EWZB6j1Tx-w/exec";
 
+  // Fetch Lucky Draw Data - Updated with AJAX
+  function fetchLuckyDrawData() {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", `${apiUrl}?action=getLuckyDrawData`, true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            const timerDiv = document.getElementById("timer");
+
+            if (response.status === "success" && response.data.length > 0) {
+              // Assuming the first lucky draw is the most relevant
+              const draw = response.data[0];
+              
+              // Extract and display draw details
+              const drawDate = draw["Draw Date"] || "N/A";
+              const drawTime = draw["Draw Time"] || "N/A";
+              const drawName = draw["Draw Name"] || "Upcoming Lucky Draw";
+
+              // Display timer
+              const drawDateTime = new Date(`${drawDate} ${drawTime}`);
+              startTimer(drawDateTime.getTime());
+
+              // Display draw name
+              timerDiv.innerHTML = `
+                <p><strong>${drawName}</strong></p>
+                <p>Draw Date: ${drawDate}</p>
+                <p>Time: ${drawTime}</p>
+                <p id="countdown">Time left: Loading...</p>
+              `;
+            } else {
+              timerDiv.innerHTML = "<p>No upcoming draws.</p>";
+            }
+          } catch (error) {
+            console.error("Error parsing lucky draw data:", error);
+            document.getElementById("timer").innerText = "Failed to load draw details.";
+          }
+        } else {
+          console.error("Error fetching lucky draw data:", xhr.statusText);
+          document.getElementById("timer").innerText = "Failed to load draw details.";
+        }
+      }
+    };
+    xhr.send();
+  }
+
   // Timer function
   function startTimer(endTime) {
-    const timer = document.getElementById("timer");
+    const countdownDiv = document.getElementById("countdown");
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const distance = endTime - now;
+
       if (distance <= 0) {
         clearInterval(interval);
-        timer.innerHTML = "The draw is happening now!";
+        countdownDiv.innerHTML = "The draw is happening now!";
         return;
       }
+
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      timer.innerHTML = `Time left: ${hours}h ${minutes}m ${seconds}s`;
+
+      countdownDiv.innerHTML = `Time left: ${hours}h ${minutes}m ${seconds}s`;
     }, 1000);
   }
 
-  // Fetch lucky draw data and start timer
-  async function fetchLuckyDrawData() {
-    try {
-      const response = await fetch(`${apiUrl}?action=getLuckyDrawData`);
-      const result = await response.json();
-      
-      if (result.status === "success" && result.data.length > 0) {
-        const draw = result.data[0]; // Assuming the first draw for now
-        const drawDateTime = new Date(`${draw.drawDate} ${draw.drawTime}`);
-        startTimer(drawDateTime.getTime());
-      } else {
-        document.getElementById("timer").innerText = "No upcoming draws.";
-      }
-    } catch (error) {
-      console.error("Error fetching lucky draw data:", error);
-      document.getElementById("timer").innerText = "Failed to load draw details.";
-    }
-  }
+  // Call fetchLuckyDrawData on page load
+  fetchLuckyDrawData();
 
   // Search Udyam Number
   async function searchUdyam() {
