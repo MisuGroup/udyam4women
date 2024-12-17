@@ -41,7 +41,7 @@
 <script>
   const apiUrl = "https://script.google.com/macros/s/AKfycbwS0PiCg6hx5iMn1NhqD1pmhd-h5IdDyQyGDPBaCIbfEVFgUvh6cc6S0M8EWZB6j1Tx-w/exec";
 
-  // Fetch Lucky Draw Data - Updated with AJAX and Proper Date Handling
+  // Fetch Lucky Draw Data - Show all records
   function fetchLuckyDrawData() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", `${apiUrl}?action=getLuckyDrawData`, true);
@@ -71,7 +71,7 @@
                   drawTime.getSeconds()
                 );
 
-                // Add draw details and a placeholder for the timer
+                // Append draw details and a placeholder for the timer
                 html += `
                   <div>
                     <h3>${drawName}</h3>
@@ -83,9 +83,12 @@
                 `;
 
                 // Start a timer for each draw
-                startTimer(combinedDateTime.getTime(), `countdown-${index}`);
+                setTimeout(() => {
+                  startTimer(combinedDateTime.getTime(), `countdown-${index}`);
+                }, 0);
               });
 
+              // Add all records to the timerDiv
               timerDiv.innerHTML = html;
             } else {
               timerDiv.innerHTML = "<p>No upcoming draws.</p>";
