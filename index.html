@@ -127,38 +127,41 @@
   function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
-      alert("Please enter a valid Udyam number.");
-      return;
+        alert("Please enter a valid Udyam number.");
+        return;
     }
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", apiUrl, true);
-    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.open("POST", apiUrl, true); // Use POST method
+    xhr.setRequestHeader("Content-Type", "application/json"); // Set proper header
+
     xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          if (response.status === "success") {
-            document.getElementById("randomizer").innerHTML = `
-              <p class="winner">Congratulations! Udyam ${udyamNumber} is eligible.</p>
-            `;
-          } else {
-            document.getElementById("randomizer").innerHTML = `
-              <p class="error">${response.message}</p>
-            `;
-          }
-        } else {
-          document.getElementById("randomizer").innerHTML = "<p class='error'>Failed to search.</p>";
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.status === "success") {
+                    document.getElementById("randomizer").innerHTML = `
+                      <p class="winner">Congratulations! Udyam ${udyamNumber} is eligible.</p>
+                    `;
+                } else {
+                    document.getElementById("randomizer").innerHTML = `
+                      <p class="error">${response.message}</p>
+                    `;
+                }
+            } else {
+                document.getElementById("randomizer").innerHTML = `
+                  <p class="error">Error: ${xhr.status}. Failed to search.</p>
+                `;
+            }
         }
-      }
     };
 
     const payload = {
-      action: "searchUdyamNumber",
-      udyamNumber: udyamNumber
+        action: "searchUdyamNumber",
+        udyamNumber: udyamNumber
     };
-    xhr.send(JSON.stringify(payload));
-  }
+    xhr.send(JSON.stringify(payload)); // Send payload as JSON
+}
 
   // Fetch Winners
   function fetchWinners() {
