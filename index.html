@@ -53,27 +53,21 @@
           data.data.data.forEach((draw, index) => {
             const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
             const drawDate = new Date(draw["Lucky Draw Date"]);
-            const drawTime = draw["Lucky Draw Time"].split(":");
-            const combinedDateTime = new Date(
-              drawDate.getFullYear(),
-              drawDate.getMonth(),
-              drawDate.getDate(),
-              parseInt(drawTime[0]),
-              parseInt(drawTime[1])
-            );
+            const [hours, minutes] = draw["Lucky Draw Time"].split(":");
+            drawDate.setHours(hours, minutes, 0);
 
             html += `
               <div>
                 <h3>${drawName}</h3>
                 <p>Draw Date: ${drawDate.toDateString()}</p>
-                <p>Draw Time: ${drawTime.join(":")}</p>
-                <p id="countdown-${index}">Time left: Loading...</p>
+                <p>Draw Time: ${hours}:${minutes}</p>
+                <p id="countdown-${index}">Time left: Calculating...</p>
               </div>
               <hr>
             `;
 
             setTimeout(() => {
-              startTimer(combinedDateTime.getTime(), `countdown-${index}`);
+              startTimer(drawDate.getTime(), `countdown-${index}`);
             }, 0);
           });
 
@@ -88,7 +82,7 @@
       });
   }
 
-  // Enhanced Timer function
+  // Timer function for multiple timers
   function startTimer(endTime, elementId) {
     const countdownDiv = document.getElementById(elementId);
     const interval = setInterval(() => {
