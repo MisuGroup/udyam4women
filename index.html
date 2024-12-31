@@ -42,6 +42,22 @@
       margin-top: 20px;
       font-size: 18px;
     }
+    .scroll-container {
+      font-size: 1.2em;
+      color: #555;
+      height: 30px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .scroll-winner {
+      color: green;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    button {
+      margin: 5px 0;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -50,7 +66,7 @@
   <!-- SECTION 1: Upcoming Lucky Draws -->
   <div class="section">
     <h2>Section 1: Upcoming Lucky Draws</h2>
-    <div id="timer" class="card-container">Loading...</div>
+    <div id="drawList" class="card-container">Loading...</div>
   </div>
 
   <!-- SECTION 2: Search Udyam Number -->
@@ -70,61 +86,69 @@
   </div>
 
 <script>
-  const apiUrl = "https://script.google.com/macros/s/AKfycby5YOlMwMLNg8NPG9YetszMgz7Hk_aW4XompaaelevWzic0Sx-HgltxJn2jHS01IJoirA/exec";
+  const apiUrl = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"; 
+  // e.g. https://script.google.com/macros/s/AKfycbxyz1234/exec
+
+  let allDrawData = [];  // Global array to store the draws
+  let scrollingIntervals = {}; // Keep track of intervals for each draw
 
   // Fetch Lucky Draw Data - Show all records
   function fetchLuckyDrawData() {
     fetch(`${apiUrl}?action=getLuckyDrawData`)
       .then(response => response.json())
-      .then(data => {
-        const timerDiv = document.getElementById("timer");
-        if (data.status === "success" && data.data.data.length > 0) {
-          let html = "";
-
-          data.data.data.forEach((draw, index) => {
-            // Fallback name if "Draw Name" is missing
-            const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
-
-            // Parse the Lucky Draw Date
-            const drawDate = new Date(draw["Lucky Draw Date"]);
-
-            // Parse the Lucky Draw Time
-            const drawTime = new Date(draw["Lucky Draw Time"]);
-
-            // Merge hours/minutes/seconds from drawTime into drawDate
-            drawDate.setHours(drawTime.getHours(), drawTime.getMinutes(), drawTime.getSeconds());
-
-            // We'll display the local date/time as strings
-            const dateString = drawDate.toLocaleDateString();
-            const timeString = drawDate.toLocaleTimeString();
-
-            // Container (card) for each draw
-            html += `
-              <div class="card">
-                <h3>${drawName}</h3>
-                <p><strong>Draw Date:</strong> ${dateString}</p>
-                <p><strong>Draw Time:</strong> ${timeString}</p>
-                <p id="countdown-${index}" style="font-weight:bold;color:#d9534f">
-                  Time left: Calculating...
-                </p>
-              </div>
-            `;
-
-            // Start a countdown timer for each draw
-            setTimeout(() => {
-              startTimer(drawDate.getTime(), `countdown-${index}`);
-            }, 0);
-          });
-
-          timerDiv.innerHTML = html;
+      .then(json => {
+        if (json.status === "success" && json.data.data.length > 0) {
+          allDrawData = json.data.data;
+          showLuckyDraws(allDrawData);
         } else {
-          timerDiv.innerHTML = "<p>No upcoming draws.</p>";
+          document.getElementById("drawList").innerHTML = "<p>No upcoming draws.</p>";
         }
       })
       .catch(error => {
         console.error("Error fetching lucky draw data:", error);
-        document.getElementById("timer").innerText = "Failed to load draw details.";
+        document.getElementById("drawList").innerText = "Failed to load draw details.";
       });
+  }
+
+  // Create HTML for each draw, including countdown & random scroll
+  function showLuckyDraws(draws) {
+    const drawListDiv = document.getElementById("drawList");
+    drawListDiv.innerHTML = ""; // clear any previous content
+
+    draws.forEach((draw, index) => {
+      const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
+      const drawDate = new Date(draw["Lucky Draw Date"]);
+      const drawTime = new Date(draw["Lucky Draw Time"]);
+      drawDate.setHours(drawTime.getHours(), drawTime.getMinutes(), drawTime.getSeconds());
+
+      const dateString = drawDate.toLocaleDateString();
+      const timeString = drawDate.toLocaleTimeString();
+
+      // Build each draw card
+      const cardHtml = `
+        <div class="card">
+          <h3>${drawName}</h3>
+          <p><strong>Draw Date:</strong> ${dateString}</p>
+          <p><strong>Draw Time:</strong> ${timeString}</p>
+          <p id="countdown-${index}" style="font-weight:bold;color:#d9534f">
+            Time left: Calculating...
+          </p>
+
+          <!-- Udyam Number Scrolling Container -->
+          <div>
+            <p><strong>Random Scroll:</strong></p>
+            <div id="scroll-${index}" class="scroll-container">--</div>
+            <button onclick="startScrolling(${index})">Start Random Scroll</button>
+            <button onclick="stopScrolling(${index})">Stop & Pick Winner</button>
+            <div id="winner-${index}" class="scroll-winner"></div>
+          </div>
+        </div>
+      `;
+      drawListDiv.insertAdjacentHTML("beforeend", cardHtml);
+
+      // Start the countdown timer
+      startTimer(drawDate.getTime(), `countdown-${index}`);
+    });
   }
 
   // Timer function for multiple timers
@@ -148,7 +172,6 @@
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      // Build a readable countdown string
       const timeParts = [];
       if (years > 0) timeParts.push(`${years} Year${years > 1 ? "s" : ""}`);
       if (months > 0) timeParts.push(`${months} Month${months > 1 ? "s" : ""}`);
@@ -157,6 +180,44 @@
 
       countdownDiv.innerHTML = `Time left: ${timeParts.join(", ")}`;
     }, 1000);
+  }
+
+  // Start random scrolling for a specific draw index
+  function startScrolling(index) {
+    // If it's already scrolling, do nothing
+    if (scrollingIntervals[index]) return;
+
+    const draw = allDrawData[index];
+    const recordContainer = document.getElementById(`scroll-${index}`);
+    const winnerDiv = document.getElementById(`winner-${index}`);
+    winnerDiv.innerHTML = "";  // clear any previous winner
+
+    // UdyamRecords array
+    const records = draw["UdyamRecords"] || [];
+    if (records.length === 0) {
+      recordContainer.innerHTML = "No Udyam Records found.";
+      return;
+    }
+
+    // We'll pick a random Udyam Number from the array every 100 ms
+    scrollingIntervals[index] = setInterval(() => {
+      const randomIdx = Math.floor(Math.random() * records.length);
+      const randomRecord = records[randomIdx];
+      recordContainer.textContent = randomRecord["Udyam Number"];
+    }, 100);
+  }
+
+  // Stop the random scrolling and pick final winner
+  function stopScrolling(index) {
+    if (!scrollingIntervals[index]) return;
+
+    // Clear the interval
+    clearInterval(scrollingIntervals[index]);
+    scrollingIntervals[index] = null;
+
+    // The displayed text in scroll-${index} is our "final" winner
+    const winnerNumber = document.getElementById(`scroll-${index}`).textContent;
+    document.getElementById(`winner-${index}`).innerHTML = `Winner: ${winnerNumber}`;
   }
 
   // Search for Udyam Number using GET
