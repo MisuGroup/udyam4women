@@ -125,11 +125,14 @@
         const randomizerDiv = document.getElementById("randomizer");
         if (data.status === "success" && data.data) {
           randomizerDiv.innerHTML = `
-            <p class="winner">Congratulations! You are a winner.</p>
-            <p>Claim Code: ${data.data["Winner Claim Code"]}</p>
+            <p class="winner">Congratulations!</p>
+            <p>Udyam Number: ${data.data["Udyam Number"]}</p>
+            <p>Account Holder Name: ${data.data["Account Holder Name"]}</p>
+            <p>Draw Number: ${data.data["Draw Number"]}</p>
+            <p>Mobile Number: ${data.data["Mobile Number"]}</p>
           `;
         } else {
-          randomizerDiv.innerHTML = "<p class='error'>Sorry, you are not a winner.</p>";
+          randomizerDiv.innerHTML = "<p class='error'>Sorry, Udyam number not found.</p>";
         }
       })
       .catch(error => {
