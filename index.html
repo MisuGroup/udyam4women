@@ -51,21 +51,34 @@
           let html = "";
 
           data.data.data.forEach((draw, index) => {
+            // Fallback name if "Draw Name" is missing
             const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
-            const drawDate = new Date(draw["Lucky Draw Date"]);
-            const [hours, minutes] = draw["Lucky Draw Time"].split(":");
-            drawDate.setHours(hours, minutes, 0);
+            
+            // Parse the Lucky Draw Date
+            const drawDate = new Date(draw["Lucky Draw Date"]); 
+            
+            // Parse the Lucky Draw Time as a separate Date (e.g. 1899-12-30T11:38:50.000Z)
+            const drawTime = new Date(draw["Lucky Draw Time"]);
+            
+            // Merge hours/minutes/seconds from drawTime into drawDate
+            drawDate.setHours(drawTime.getHours(), drawTime.getMinutes(), drawTime.getSeconds());
+            
+            // We'll display the local date/time as strings
+            const dateString = drawDate.toLocaleDateString();  // e.g. "12/30/2024"
+            const timeString = drawDate.toLocaleTimeString();  // e.g. "11:38:50 AM"
 
+            // Build the HTML to show the upcoming draws
             html += `
               <div>
                 <h3>${drawName}</h3>
-                <p>Draw Date: ${drawDate.toDateString()}</p>
-                <p>Draw Time: ${hours}:${minutes}</p>
+                <p>Draw Date: ${dateString}</p>
+                <p>Draw Time: ${timeString}</p>
                 <p id="countdown-${index}">Time left: Calculating...</p>
               </div>
               <hr>
             `;
 
+            // Start a countdown timer for each draw
             setTimeout(() => {
               startTimer(drawDate.getTime(), `countdown-${index}`);
             }, 0);
@@ -95,6 +108,7 @@
         return;
       }
 
+      // Calculate the time components
       const years = Math.floor(distance / (1000 * 60 * 60 * 24 * 365));
       const months = Math.floor((distance % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30));
       const days = Math.floor((distance % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
@@ -102,6 +116,7 @@
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
+      // Build a readable countdown string
       const timeParts = [];
       if (years > 0) timeParts.push(`${years} Year${years > 1 ? "s" : ""}`);
       if (months > 0) timeParts.push(`${months} Month${months > 1 ? "s" : ""}`);
