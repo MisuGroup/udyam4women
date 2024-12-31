@@ -111,7 +111,7 @@
     }, 1000);
   }
 
-  // Search for Udyam Number
+  // Search for Udyam Number using GET
   function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
@@ -119,13 +119,7 @@
       return;
     }
 
-    fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ action: "searchUdyamNumber", udyamNumber: udyamNumber }),
-    })
+    fetch(`${apiUrl}?action=searchUdyamNumber&udyamNumber=${encodeURIComponent(udyamNumber)}`)
       .then(response => response.json())
       .then(data => {
         const randomizerDiv = document.getElementById("randomizer");
