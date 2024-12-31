@@ -5,12 +5,29 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       margin: 20px;
     }
-    #randomizer {
-      font-size: 24px;
-      margin: 20px 0;
+    h1, h2 {
+      text-align: center;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    /* Flex container for cards (3 columns) */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem; /* space between cards */
+      justify-content: center; /* center them horizontally */
+    }
+    /* Individual card styling */
+    .card {
+      flex: 1 1 calc(33.333% - 2rem); /* 3 columns: 33.3% each minus some padding/gap */
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      min-width: 250px; /* ensures a reasonable minimum card width */
+      margin: 0.5rem 0;
     }
     .winner {
       font-weight: bold;
@@ -19,24 +36,38 @@
     .error {
       color: red;
     }
+    /* Center the result text in Section 2 (randomizer results) */
+    #randomizer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
   <h1>Lucky Draw</h1>
 
-  <!-- Timer Section -->
-  <h2>Time Remaining</h2>
-  <div id="timer">Loading...</div>
+  <!-- SECTION 1: Upcoming Lucky Draws -->
+  <div class="section">
+    <h2>Section 1: Upcoming Lucky Draws</h2>
+    <div id="timer" class="card-container">Loading...</div>
+  </div>
 
-  <!-- Randomizer Section -->
-  <h2>Search Your Udyam Number</h2>
-  <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
-  <button onclick="searchUdyam()">Search</button>
-  <div id="randomizer">Waiting for your input...</div>
+  <!-- SECTION 2: Search Udyam Number -->
+  <div class="section">
+    <h2>Section 2: Search Your Udyam Number</h2>
+    <div style="text-align:center;">
+      <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
+      <button onclick="searchUdyam()">Search</button>
+    </div>
+    <div id="randomizer">Waiting for your input...</div>
+  </div>
 
-  <!-- Winner List -->
-  <h2>Winners</h2>
-  <div id="winnerList">Loading...</div>
+  <!-- SECTION 3: Past Winners -->
+  <div class="section">
+    <h2>Section 3: Past Winners</h2>
+    <div id="winnerList" class="card-container">Loading...</div>
+  </div>
 
 <script>
   const apiUrl = "https://script.google.com/macros/s/AKfycby5YOlMwMLNg8NPG9YetszMgz7Hk_aW4XompaaelevWzic0Sx-HgltxJn2jHS01IJoirA/exec";
@@ -53,29 +84,30 @@
           data.data.data.forEach((draw, index) => {
             // Fallback name if "Draw Name" is missing
             const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
-            
+
             // Parse the Lucky Draw Date
-            const drawDate = new Date(draw["Lucky Draw Date"]); 
-            
-            // Parse the Lucky Draw Time as a separate Date (e.g. 1899-12-30T11:38:50.000Z)
+            const drawDate = new Date(draw["Lucky Draw Date"]);
+
+            // Parse the Lucky Draw Time
             const drawTime = new Date(draw["Lucky Draw Time"]);
-            
+
             // Merge hours/minutes/seconds from drawTime into drawDate
             drawDate.setHours(drawTime.getHours(), drawTime.getMinutes(), drawTime.getSeconds());
-            
-            // We'll display the local date/time as strings
-            const dateString = drawDate.toLocaleDateString();  // e.g. "12/30/2024"
-            const timeString = drawDate.toLocaleTimeString();  // e.g. "11:38:50 AM"
 
-            // Build the HTML to show the upcoming draws
+            // We'll display the local date/time as strings
+            const dateString = drawDate.toLocaleDateString();
+            const timeString = drawDate.toLocaleTimeString();
+
+            // Container (card) for each draw
             html += `
-              <div>
+              <div class="card">
                 <h3>${drawName}</h3>
-                <p>Draw Date: ${dateString}</p>
-                <p>Draw Time: ${timeString}</p>
-                <p id="countdown-${index}">Time left: Calculating...</p>
+                <p><strong>Draw Date:</strong> ${dateString}</p>
+                <p><strong>Draw Time:</strong> ${timeString}</p>
+                <p id="countdown-${index}" style="font-weight:bold;color:#d9534f">
+                  Time left: Calculating...
+                </p>
               </div>
-              <hr>
             `;
 
             // Start a countdown timer for each draw
@@ -142,10 +174,10 @@
         if (data.status === "success" && data.data) {
           randomizerDiv.innerHTML = `
             <p class="winner">Congratulations!</p>
-            <p>Udyam Number: ${data.data["Udyam Number"]}</p>
-            <p>Account Holder Name: ${data.data["Account Holder Name"]}</p>
-            <p>Draw Number: ${data.data["Draw Number"]}</p>
-            <p>Mobile Number: ${data.data["Mobile Number"]}</p>
+            <p><strong>Udyam Number:</strong> ${data.data["Udyam Number"]}</p>
+            <p><strong>Account Holder Name:</strong> ${data.data["Account Holder Name"]}</p>
+            <p><strong>Draw Number:</strong> ${data.data["Draw Number"]}</p>
+            <p><strong>Mobile Number:</strong> ${data.data["Mobile Number"]}</p>
           `;
         } else {
           randomizerDiv.innerHTML = "<p class='error'>Sorry, no details found.</p>";
@@ -164,21 +196,19 @@
       .then(data => {
         const winnerListDiv = document.getElementById("winnerList");
         if (data.status === "success" && data.data.data.length > 0) {
-          let html = "<ul>";
+          let html = "";
 
-          data.data.data.forEach(winner => {
+          data.data.data.forEach((winner, index) => {
             html += `
-              <li>
+              <div class="card">
                 <strong>${winner["Draw Name"]}</strong><br>
-                Draw Date: ${winner["Draw Date"]}<br>
-                Winner Name: ${winner["Winner Name"]}<br>
-                Claim Code: ${winner["Winner Claim Code"]}
-              </li>
-              <hr>
+                <span><strong>Draw Date:</strong> ${winner["Draw Date"]}</span><br>
+                <span><strong>Winner Name:</strong> ${winner["Winner Name"]}</span><br>
+                <span><strong>Claim Code:</strong> ${winner["Winner Claim Code"]}</span>
+              </div>
             `;
           });
 
-          html += "</ul>";
           winnerListDiv.innerHTML = html;
         } else {
           winnerListDiv.innerHTML = "<p>No past results available.</p>";
