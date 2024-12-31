@@ -53,22 +53,20 @@
           data.data.data.forEach((draw, index) => {
             const drawName = draw["Draw Name"] || `Lucky Draw ${index + 1}`;
             const drawDate = new Date(draw["Lucky Draw Date"]);
-            const drawTime = new Date(draw["Lucky Draw Time"]);
-
+            const drawTime = draw["Lucky Draw Time"].split(":");
             const combinedDateTime = new Date(
               drawDate.getFullYear(),
               drawDate.getMonth(),
               drawDate.getDate(),
-              drawTime.getHours(),
-              drawTime.getMinutes(),
-              drawTime.getSeconds()
+              parseInt(drawTime[0]),
+              parseInt(drawTime[1])
             );
 
             html += `
               <div>
                 <h3>${drawName}</h3>
                 <p>Draw Date: ${drawDate.toDateString()}</p>
-                <p>Draw Time: ${drawTime.toTimeString().split(" ")[0]}</p>
+                <p>Draw Time: ${drawTime.join(":")}</p>
                 <p id="countdown-${index}">Time left: Loading...</p>
               </div>
               <hr>
@@ -90,7 +88,7 @@
       });
   }
 
-  // Timer function for multiple timers
+  // Enhanced Timer function
   function startTimer(endTime, elementId) {
     const countdownDiv = document.getElementById(elementId);
     const interval = setInterval(() => {
@@ -103,11 +101,20 @@
         return;
       }
 
+      const years = Math.floor(distance / (1000 * 60 * 60 * 24 * 365));
+      const months = Math.floor((distance % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30));
+      const days = Math.floor((distance % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      countdownDiv.innerHTML = `Time left: ${hours}h ${minutes}m ${seconds}s`;
+      const timeParts = [];
+      if (years > 0) timeParts.push(`${years} Year${years > 1 ? "s" : ""}`);
+      if (months > 0) timeParts.push(`${months} Month${months > 1 ? "s" : ""}`);
+      if (days > 0) timeParts.push(`${days} Day${days > 1 ? "s" : ""}`);
+      timeParts.push(`${hours}h ${minutes}m ${seconds}s`);
+
+      countdownDiv.innerHTML = `Time left: ${timeParts.join(", ")}`;
     }, 1000);
   }
 
