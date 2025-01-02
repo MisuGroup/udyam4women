@@ -113,11 +113,8 @@
   // We'll store our entire draws array
   let allDrawData = [];
 
-  // For each draw index, we track:
-  // - the scrolling interval (scrollIntervals[index])
-  // - the current offset used for the vertical scroll (scrollOffsets[index])
+  // For each draw index, we track the scrolling interval
   let scrollIntervals = {};
-  let scrollOffsets = {};
 
   // -------------- FETCH & RENDER LUCKY DRAWS ----------------
   function fetchLuckyDrawData() {
@@ -204,34 +201,24 @@
   }
 
   /**
-   * Automatically pick a random winner from the currently displayed draw's UdyamRecords.
-   * Stop scrolling, display winner, and record in the "past draw spreadsheet" on the server.
+   * Automatically pick the winner from the "Winner Udyam Number" field
+   * (instead of random from the UdyamRecords).
    */
   function pickAutomaticWinner(drawIndex) {
-    // Clear the scrolling interval
+    // Stop scrolling
     if (scrollIntervals[drawIndex]) {
       clearInterval(scrollIntervals[drawIndex]);
       delete scrollIntervals[drawIndex];
     }
 
     const draw = allDrawData[drawIndex];
-    const udyamRecords = draw["UdyamRecords"] || [];
     const winnerDiv = document.getElementById(`winner-${drawIndex}`);
 
-    if (!udyamRecords.length) {
-      winnerDiv.textContent = "No Udyam records found!";
-      return;
-    }
-
-    // Randomly pick one from the entire array
-    const randomIdx = Math.floor(Math.random() * udyamRecords.length);
-    const winnerRecord = udyamRecords[randomIdx];
-    const winnerNumber = winnerRecord["Udyam Number"] || "N/A";
-
+    // Show the "Winner Udyam Number" from the draw object
+    const winnerNumber = draw["Winner Udyam Number"] || "N/A";
     winnerDiv.textContent = `Winner: ${winnerNumber}`;
 
     // OPTIONAL: Record the winner in your server (Google Apps Script).
-    // We assume you have an action 'recordWinner' that takes parameters: drawName, winnerNumber, etc.
     fetch(`${apiUrl}?action=recordWinner&drawName=${encodeURIComponent(draw["Draw Name"])}&winnerNumber=${encodeURIComponent(winnerNumber)}`)
       .then(r => r.json())
       .then(resp => {
@@ -251,10 +238,7 @@
     // If already scrolling, do nothing
     if (scrollIntervals[index]) return;
 
-    scrollOffsets[index] = 0;
     const ulElement = document.getElementById(`scrollList-${index}`);
-
-    // We'll store references to the UdyamRecords
     const draw = allDrawData[index];
     const records = draw["UdyamRecords"] || [];
 
@@ -263,34 +247,39 @@
       return;
     }
 
-    // Initialize the UL with 5 random lines
-    let displayQueue = [];
-    for (let i = 0; i < 5; i++) {
-      displayQueue.push(getRandomUdyam(records));
+    // Build an array of all Udyam Numbers
+    const allUdyams = records.map(r => r["Udyam Number"] || "N/A");
+
+    // Initialize a displayQueue with up to the first 5 items
+    let currentIndex = 0;
+    const displayCount = Math.min(5, allUdyams.length);
+    let displayQueue = allUdyams.slice(currentIndex, currentIndex + displayCount);
+    currentIndex += displayCount;
+
+    // Function to grab next record and cycle through the array
+    function getNextRecord() {
+      const record = allUdyams[currentIndex];
+      currentIndex = (currentIndex + 1) % allUdyams.length; 
+      return record;
     }
+
+    // Render the initial set
     renderScrollList(ulElement, displayQueue);
 
-    // Every second, shift the list up by 1
+    // Shift every 1 second to simulate bottom-to-top movement
     scrollIntervals[index] = setInterval(() => {
-      // Remove the top item, add a new item to the bottom
+      // Remove the top item
       displayQueue.shift();
-      displayQueue.push(getRandomUdyam(records));
+      // Add the next item at the bottom
+      displayQueue.push(getNextRecord());
+      // Re-render
       renderScrollList(ulElement, displayQueue);
     }, 1000);
   }
 
-  // Helper: Return a random Udyam Number
-  function getRandomUdyam(records) {
-    const rIdx = Math.floor(Math.random() * records.length);
-    const rRec = records[rIdx];
-    return rRec["Udyam Number"] || "N/A";
-  }
-
-  // Rebuild the <li> items for a given queue
+  // Render the queue of numbers (reverse to show the first item at the bottom visually)
   function renderScrollList(ulElement, queue) {
     ulElement.innerHTML = "";
-    // We want the first item in the queue to appear at the top (visually),
-    // but we anchored at bottom, so let's reverse them:
     const reversed = [...queue].reverse();
     reversed.forEach(num => {
       const li = document.createElement("li");
@@ -299,7 +288,7 @@
     });
   }
 
-  // -------------- SEARCH UDYAM NUMBER (Existing Logic) --------------
+  // -------------- SEARCH UDYAM NUMBER --------------
   function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
