@@ -29,17 +29,13 @@
       margin: 0.5rem 0;
       position: relative;
     }
+
     .winner {
       font-weight: bold;
       color: green;
     }
     .error {
       color: red;
-    }
-    #randomizer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 18px;
     }
 
     /* Scrolling container showing exactly 5 items at once */
@@ -51,7 +47,6 @@
       position: relative;
       margin-top: 10px;
     }
-    /* We'll position an inner UL that scrolls upward */
     .scroll-list {
       list-style: none;
       padding: 0;
@@ -61,7 +56,7 @@
       width: 100%;
     }
     .scroll-list li {
-      height: 20px; /* about one line of text (adjust as needed) */
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -84,20 +79,22 @@
 <body>
   <h1>Lucky Draw</h1>
 
-  <!-- SECTION 1: Upcoming Lucky Draws -->
+  <!-- SECTION 1 (was Section 2): Search Udyam Number -->
   <div class="section">
-    <h2>Section 1: Upcoming Lucky Draws</h2>
-    <div id="drawList" class="card-container">Loading...</div>
-  </div>
-
-  <!-- SECTION 2: Search Udyam Number -->
-  <div class="section">
-    <h2>Section 2: Search Your Udyam Number</h2>
+    <h2>Section 1: Search Your Udyam Number</h2>
     <div style="text-align:center;">
       <input type="text" id="udyamSearch" placeholder="Enter Udyam Number">
       <button onclick="searchUdyam()">Search</button>
     </div>
-    <div id="randomizer">Waiting for your input...</div>
+    <div id="randomizer" style="text-align:center; margin-top:20px; font-size:18px;">
+      Waiting for your input...
+    </div>
+  </div>
+
+  <!-- SECTION 2 (was Section 1): Upcoming Lucky Draws -->
+  <div class="section">
+    <h2>Section 2: Upcoming Lucky Draws</h2>
+    <div id="drawList" class="card-container">Loading...</div>
   </div>
 
   <!-- SECTION 3: Past Winners -->
@@ -107,16 +104,13 @@
   </div>
 
 <script>
-  // 1) Replace with your live Apps Script URL:
-  const apiUrl = "https://script.google.com/macros/s/AKfycbyDsLV0z9iSOnkT2wbTsYSt8TO1Ia5354vLUyo3G4SIaZHQS6hbEkEvfUB6iBmRPZyRGQ/exec";
+  // Replace with your live Apps Script URL:
+  const apiUrl = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
 
-  // We'll store our entire draws array
   let allDrawData = [];
+  let scrollIntervals = {}; // track intervals per draw
 
-  // For each draw index, we track the scrolling interval
-  let scrollIntervals = {};
-
-  // -------------- FETCH & RENDER LUCKY DRAWS ----------------
+  // -------------------- FETCH & RENDER LUCKY DRAWS --------------------
   function fetchLuckyDrawData() {
     fetch(`${apiUrl}?action=getLuckyDrawData`)
       .then(response => response.json())
@@ -147,37 +141,41 @@
       const dateString = drawDate.toLocaleDateString();
       const timeString = drawDate.toLocaleTimeString();
 
-      // Each draw's card includes:
-      // - Date/time
-      // - Countdown
-      // - A container for the bottom-to-top scroll of 5 numbers
-      // - A placeholder for the winner
+      // Build the card
       const card = document.createElement("div");
       card.className = "card";
 
+      // We'll wrap the scroll container in its own <div> so we can hide it if the draw is closed
+      const scrollContainerId = `scrollContainer-${index}`;
+      const scrollListId = `scrollList-${index}`;
       card.innerHTML = `
         <h3>${drawName}</h3>
         <p><strong>Draw Date:</strong> ${dateString}</p>
         <p><strong>Draw Time:</strong> ${timeString}</p>
         <p id="countdown-${index}" class="countdown">Time left: Calculating...</p>
-        <div class="scroll-container">
-          <ul id="scrollList-${index}" class="scroll-list"></ul>
+
+        <!-- This container holds the 5-line random scroll -->
+        <div id="${scrollContainerId}" class="scroll-container">
+          <ul id="${scrollListId}" class="scroll-list"></ul>
         </div>
+
         <div id="winner-${index}" class="scroll-winner"></div>
       `;
+
       drawListDiv.appendChild(card);
 
       // Start the countdown
       startTimer(drawDate.getTime(), `countdown-${index}`, index);
 
-      // Start the scrolling of UdyamNumbers automatically
+      // Start the auto-scroll of 5 items (for active draws)
       startScrolling(index);
     });
   }
 
-  // -------------- COUNTDOWN & AUTOMATIC WINNER PICKING --------------
-  function startTimer(endTime, elementId, drawIndex) {
-    const countdownDiv = document.getElementById(elementId);
+  // -------------------- COUNTDOWN & AUTO WINNER DISPLAY --------------------
+  function startTimer(endTime, countdownId, drawIndex) {
+    const countdownDiv = document.getElementById(countdownId);
+
     const interval = setInterval(() => {
       const now = Date.now();
       const distance = endTime - now;
@@ -185,12 +183,17 @@
       if (distance <= 0) {
         clearInterval(interval);
         countdownDiv.textContent = "The draw is closed!";
-        // The moment the draw closes, pick the winner automatically
-        pickAutomaticWinner(drawIndex);
+
+        // Hide the random scroll container for this closed draw
+        const scrollContainer = document.getElementById(`scrollContainer-${drawIndex}`);
+        if (scrollContainer) scrollContainer.style.display = "none";
+
+        // Display the "Winner Udyam Number" from the response
+        showWinnerUdyam(drawIndex);
         return;
       }
 
-      // Calculate time left
+      // Calculate time left (days, hours, minutes, seconds)
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -200,12 +203,8 @@
     }, 1000);
   }
 
-  /**
-   * Automatically pick the winner from the "Winner Udyam Number" field
-   * (instead of random from the UdyamRecords).
-   */
-  function pickAutomaticWinner(drawIndex) {
-    // Stop scrolling
+  function showWinnerUdyam(drawIndex) {
+    // Stop scrolling if still active
     if (scrollIntervals[drawIndex]) {
       clearInterval(scrollIntervals[drawIndex]);
       delete scrollIntervals[drawIndex];
@@ -213,17 +212,15 @@
 
     const draw = allDrawData[drawIndex];
     const winnerDiv = document.getElementById(`winner-${drawIndex}`);
-
-    // Show the "Winner Udyam Number" from the draw object
     const winnerNumber = draw["Winner Udyam Number"] || "N/A";
     winnerDiv.textContent = `Winner: ${winnerNumber}`;
 
-    // OPTIONAL: Record the winner in your server (Google Apps Script).
+    // OPTIONAL: record the winner on the server
     fetch(`${apiUrl}?action=recordWinner&drawName=${encodeURIComponent(draw["Draw Name"])}&winnerNumber=${encodeURIComponent(winnerNumber)}`)
       .then(r => r.json())
       .then(resp => {
         if (resp.status === "success") {
-          console.log("Winner recorded successfully.");
+          console.log("Winner recorded successfully!");
         } else {
           console.error("Error recording winner:", resp.message);
         }
@@ -233,9 +230,9 @@
       });
   }
 
-  // -------------- SCROLLING 5 NUMBERS FROM BOTTOM TO TOP --------------
+  // -------------------- 5-LINE BOTTOM-TO-TOP SCROLLING --------------------
   function startScrolling(index) {
-    // If already scrolling, do nothing
+    // If the interval is already running, skip
     if (scrollIntervals[index]) return;
 
     const ulElement = document.getElementById(`scrollList-${index}`);
@@ -247,37 +244,28 @@
       return;
     }
 
-    // Build an array of all Udyam Numbers
-    const allUdyams = records.map(r => r["Udyam Number"] || "N/A");
-
-    // Initialize a displayQueue with up to the first 5 items
-    let currentIndex = 0;
-    const displayCount = Math.min(5, allUdyams.length);
-    let displayQueue = allUdyams.slice(currentIndex, currentIndex + displayCount);
-    currentIndex += displayCount;
-
-    // Function to grab next record and cycle through the array
-    function getNextRecord() {
-      const record = allUdyams[currentIndex];
-      currentIndex = (currentIndex + 1) % allUdyams.length; 
-      return record;
+    // Initialize a queue of 5 random lines
+    let displayQueue = [];
+    for (let i = 0; i < 5; i++) {
+      displayQueue.push(randomUdyam(records));
     }
-
-    // Render the initial set
     renderScrollList(ulElement, displayQueue);
 
-    // Shift every 1 second to simulate bottom-to-top movement
+    // Scroll upward every second
     scrollIntervals[index] = setInterval(() => {
-      // Remove the top item
       displayQueue.shift();
-      // Add the next item at the bottom
-      displayQueue.push(getNextRecord());
-      // Re-render
+      displayQueue.push(randomUdyam(records));
       renderScrollList(ulElement, displayQueue);
     }, 1000);
   }
 
-  // Render the queue of numbers (reverse to show the first item at the bottom visually)
+  // Helper: pick random Udyam Number
+  function randomUdyam(records) {
+    const rIdx = Math.floor(Math.random() * records.length);
+    return records[rIdx]["Udyam Number"] || "N/A";
+  }
+
+  // Helper: render queue reversed so last item is at the bottom
   function renderScrollList(ulElement, queue) {
     ulElement.innerHTML = "";
     const reversed = [...queue].reverse();
@@ -288,7 +276,7 @@
     });
   }
 
-  // -------------- SEARCH UDYAM NUMBER --------------
+  // -------------------- SEARCH UDYAM NUMBER (new top section) --------------------
   function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
@@ -318,7 +306,7 @@
       });
   }
 
-  // -------------- FETCH PAST WINNERS --------------
+  // -------------------- FETCH PAST WINNERS (Section 3) --------------------
   function fetchPastResults() {
     fetch(`${apiUrl}?action=getPastResults`)
       .then(response => response.json())
@@ -347,7 +335,7 @@
       });
   }
 
-  // -------------- ON LOAD --------------
+  // -------------------- PAGE INIT --------------------
   fetchLuckyDrawData();
   fetchPastResults();
 </script>
