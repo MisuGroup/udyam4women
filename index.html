@@ -1,103 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Udyam Lucky Draw</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Important for mobile responsiveness -->
+  <title>Lucky Draw</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><!-- ensures mobile responsiveness -->
   <style>
-    /* BASIC PAGE STYLING */
+    /* Use a modern sans-serif font similar to your main site */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
     body {
       margin: 0;
       padding: 0;
-      font-family: "Open Sans", Arial, sans-serif; /* A modern font family */
+      font-family: 'Poppins', Arial, sans-serif; 
       background-color: #fff;
-      color: #555; /* Slightly darker text */
+      color: #444; 
     }
 
-    /* A container to keep content centered and not too wide */
+    /* Container for overall layout */
     .container {
       width: 90%;
       max-width: 1200px;
       margin: 0 auto;
-      padding-top: 40px;
+      padding-top: 30px;
       padding-bottom: 40px;
     }
 
-    /* HEADINGS */
+    /* Headings */
     h1, h2 {
       text-align: center;
       font-weight: 700;
       margin-bottom: 20px;
+      line-height: 1.3;
       color: #333;
-      line-height: 1.3; /* Better readability on smaller screens */
     }
     h1 {
+      /* Reflect your brand purple */
       color: #9b0fa0; 
       margin-top: 0;
-      font-size: 2rem; 
+      font-size: 2rem;
     }
     h2 {
+      /* Reflect your brand orange */
       color: #ff6600;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       margin-top: 0;
     }
 
-    /* SPACING FOR SECTIONS */
+    /* Section styling with subtle background & spacing */
     .section {
-      margin-bottom: 50px;
-      padding: 20px 0;
-      background: #f9f9f9; /* subtle background for separation */
-      border-radius: 5px;
+      margin-bottom: 40px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 6px;
     }
     .section > h2 {
-      margin: 0 0 20px;
+      margin-top: 0;
+      margin-bottom: 16px;
     }
 
-    /* SEARCH / INPUT STYLING */
+    /* Inputs & button styling: consistent with brand purple/orange theme */
     #udyamSearch {
       width: 250px;
       max-width: 100%;
-      padding: 8px;
+      padding: 10px;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
+      outline: none;
     }
     button {
       background-color: #9b0fa0;
       color: #fff;
       border: none;
       border-radius: 4px;
-      padding: 9px 16px;
+      padding: 10px 16px;
       font-size: 1rem;
       cursor: pointer;
       margin-left: 5px;
+      transition: background-color 0.3s;
     }
     button:hover {
       background-color: #7f0d86;
     }
 
-    /* MESSAGES & TEXT */
+    /* Feedback messages */
     .winner {
-      font-weight: bold;
-      color: green;
+      font-weight: 600;
+      color: #008000; /* brighter green for clarity */
       font-size: 1.1rem;
     }
     .error {
-      color: red;
-      font-weight: bold;
+      color: #cc0000; 
+      font-weight: 600;
     }
     #randomizer {
       text-align: center; 
       margin-top: 20px; 
-      font-size: 18px;
+      font-size: 1rem;
+      color: #444;
+      min-height: 60px;
     }
 
-    /* COUNTDOWN */
+    /* Countdown text styling */
     .countdown {
-      font-weight: bold;
-      color: #d9534f;
+      font-weight: 600;
+      color: #d9534f; /* bootstrap danger-like color */
+      margin-top: 5px;
     }
 
-    /* LAYOUT FOR DRAW CARDS */
+    /* Card layout for draws/winners */
     .card-container {
       display: flex;
       flex-wrap: wrap;
@@ -110,33 +120,37 @@
       box-sizing: border-box;
       border: 1px solid #eee;
       border-radius: 5px;
+      background: #fff;
       padding: 1rem;
       min-width: 250px;
       margin: 0.5rem 0;
-      position: relative;
-      background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     .card h3 {
       font-size: 1.1rem;
       margin: 0 0 10px;
       color: #333;
+      font-weight: 600;
     }
     .card p {
       font-size: 0.95rem;
       line-height: 1.4;
       margin: 5px 0;
+      color: #444;
+    }
+    .card strong {
+      color: #333;
     }
 
-    /* SCROLLING CONTAINER */
+    /* Scroll container for random Udyam numbers */
     .scroll-container {
       width: 100%;
-      height: 100px; /* shows ~5 lines */
+      height: 100px; 
       overflow: hidden;
       border: 1px solid #ddd;
       position: relative;
       margin-top: 10px;
-      border-radius: 3px;
+      border-radius: 4px;
       background: #fafafa;
     }
     .scroll-list {
@@ -152,27 +166,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
+      font-weight: 600;
       color: #555;
       font-size: 0.9rem;
     }
     .scroll-winner {
       margin-top: 10px;
-      color: green;
-      font-size: 1.2em;
-      font-weight: bold;
+      color: #008000; 
+      font-size: 1.1rem;
+      font-weight: 600;
       text-align: center;
     }
 
-    /* RESPONSIVE ADJUSTMENTS */
+    /* Responsive: 2 columns at medium screens, 1 column on mobile */
     @media (max-width: 992px) {
       .card {
-        flex: 1 1 calc(50% - 2rem); /* 2 columns on medium devices */
+        flex: 1 1 calc(50% - 2rem);
       }
     }
     @media (max-width: 576px) {
       .card {
-        flex: 1 1 100%; /* Single column on small devices */
+        flex: 1 1 100%;
       }
       h1 {
         font-size: 1.6rem;
@@ -184,10 +198,9 @@
   </style>
 </head>
 <body>
-  <!-- WRAP EVERYTHING IN A .container TO ALIGN CONTENT -->
   <div class="container">
-
-    <h1>Udyam Lucky Draw</h1>
+    <!-- Page Title -->
+    <h1>Lucky Draw</h1>
 
     <!-- SECTION 1: Search Udyam Number -->
     <div class="section">
@@ -216,15 +229,14 @@
         Loading...
       </div>
     </div>
-
-  </div> <!-- end .container -->
+  </div> <!-- container end -->
 
 <script>
   // Replace with your live Apps Script URL:
-  const apiUrl = "https://script.google.com/macros/s/AKfycbxDq8D1rFGG7NvrnV3bQmTTdJ5gGuCjENbfxunEncJKjY23hfSRr86lq5bWj3muDVjSUg/exec";
+  const apiUrl = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
   let allDrawData = [];
-  let scrollIntervals = {}; // track intervals per draw
+  let scrollIntervals = {};
 
   // -------------------- FETCH & RENDER LUCKY DRAWS --------------------
   function fetchLuckyDrawData() {
@@ -270,7 +282,6 @@
         <p><strong>Draw Time:</strong> ${timeString}</p>
         <p id="countdown-${index}" class="countdown">Time left: Calculating...</p>
 
-        <!-- 5-line random scroll container -->
         <div id="${scrollContainerId}" class="scroll-container">
           <ul id="${scrollListId}" class="scroll-list"></ul>
         </div>
@@ -283,7 +294,7 @@
       // Start the countdown
       startTimer(drawDate.getTime(), `countdown-${index}`, index);
 
-      // Start the auto-scroll (for active draws)
+      // Start the scrolling
       startScrolling(index);
     });
   }
@@ -291,7 +302,6 @@
   // -------------------- COUNTDOWN & AUTO WINNER DISPLAY --------------------
   function startTimer(endTime, countdownId, drawIndex) {
     const countdownDiv = document.getElementById(countdownId);
-
     const interval = setInterval(() => {
       const now = Date.now();
       const distance = endTime - now;
@@ -300,16 +310,13 @@
         clearInterval(interval);
         countdownDiv.textContent = "The draw is closed!";
 
-        // Hide the random scroll container
         const scrollContainer = document.getElementById(`scrollContainer-${drawIndex}`);
         if (scrollContainer) scrollContainer.style.display = "none";
 
-        // Show the "Winner Udyam Number"
         showWinnerUdyam(drawIndex);
         return;
       }
 
-      // days / hours / minutes / seconds
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -330,7 +337,7 @@
     const winnerNumber = draw["Winner Udyam Number"] || "N/A";
     winnerDiv.textContent = `Winner: ${winnerNumber}`;
 
-    // OPTIONAL: record the winner on the server
+    // (Optional) Record the winner
     fetch(`${apiUrl}?action=recordWinner&drawName=${encodeURIComponent(draw["Draw Name"])}&winnerNumber=${encodeURIComponent(winnerNumber)}`)
       .then(r => r.json())
       .then(resp => {
@@ -345,10 +352,9 @@
       });
   }
 
-  // -------------------- 5-LINE BOTTOM-TO-TOP SCROLLING --------------------
+  // -------------------- SCROLLING LIST (5 lines) --------------------
   function startScrolling(index) {
     if (scrollIntervals[index]) return;
-
     const ulElement = document.getElementById(`scrollList-${index}`);
     const draw = allDrawData[index];
     const records = draw["UdyamRecords"] || [];
@@ -386,7 +392,7 @@
     });
   }
 
-  // -------------------- SEARCH UDYAM NUMBER (top section) --------------------
+  // -------------------- SEARCH UDYAM NUMBER --------------------
   function searchUdyam() {
     const udyamNumber = document.getElementById("udyamSearch").value.trim();
     if (!udyamNumber) {
@@ -405,7 +411,6 @@
             <p><strong>Account Holder Name:</strong> ${data.data["Account Holder Name"]}</p>
             <p><strong>Draw Number:</strong> ${data.data["Draw Number"]}</p>
             <p><strong>Mobile Number:</strong> ${data.data["Mobile Number"]}</p>
-            <p><strong>Draw Date:</strong> ${data.data["Draw Date"]}</p>
           `;
         } else {
           randomizerDiv.innerHTML = "<p class='error'>Sorry, no details found.</p>";
@@ -417,7 +422,7 @@
       });
   }
 
-  // -------------------- FETCH PAST WINNERS (Section 3) --------------------
+  // -------------------- PAST WINNERS --------------------
   function fetchPastResults() {
     fetch(`${apiUrl}?action=getPastResults`)
       .then(response => response.json())
@@ -425,7 +430,7 @@
         const winnerListDiv = document.getElementById("winnerList");
         if (data.status === "success" && data.data.data.length > 0) {
           let html = "";
-          data.data.data.forEach((winner, index) => {
+          data.data.data.forEach((winner) => {
             html += `
               <div class="card">
                 <strong>${winner["Draw Name"]}</strong><br>
@@ -446,7 +451,7 @@
       });
   }
 
-  // -------------------- PAGE INIT --------------------
+  // Initialize
   fetchLuckyDrawData();
   fetchPastResults();
 </script>
